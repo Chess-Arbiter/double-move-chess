@@ -7,10 +7,11 @@ import { Color, GameState } from "../../engine/types";
 interface StatusPanelProps {
   state: GameState;
   isLive: boolean;
-  botColor: Color;
+  /** The bot's color, or null when two people play. */
+  botColor: Color | null;
 }
 
-function describe(state: GameState, botColor: Color): { title: string; detail: string; alert: boolean } {
+function describe(state: GameState, botColor: Color | null): { title: string; detail: string; alert: boolean } {
   const isBot = state.turn === botColor;
   const player = colorName(state.turn) + (isBot ? " (bot)" : "");
 

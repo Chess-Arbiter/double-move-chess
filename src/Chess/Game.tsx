@@ -4,10 +4,13 @@ import Board from "./components/Board/Board";
 import MatchInfo from "./components/MatchInfo/MatchInfo";
 import MoveList from "./components/MoveList/MoveList";
 import PromotionPicker from "./components/PromotionPicker/PromotionPicker";
+import Settings, { Mode } from "./components/Settings/Settings";
 import StatusPanel from "./components/StatusPanel/StatusPanel";
+import { Level, useBot } from "./bot/useBot";
+import { opposite } from "./engine/board";
 import { MOVES_PER_TURN, newGame, playAndRecord } from "./engine/game";
 import { findKing, isInCheck, isPromotion, legalMovesFrom } from "./engine/moves";
-import { GameState, Move, MoveRecord, PromotionType } from "./engine/types";
+import { Color, GameState, Move, MoveRecord, PromotionType } from "./engine/types";
 
 interface History {
   /** states[0] is the starting position, states[i] the position after i moves. */
@@ -23,12 +26,17 @@ export default function Game() {
   const [selected, setSelected] = useState<number | null>(null);
   const [pendingPromotion, setPendingPromotion] = useState<Move | null>(null);
   const [flipped, setFlipped] = useState(false);
+  const [mode, setMode] = useState<Mode>("bot");
+  const [humanColor, setHumanColor] = useState<Color>("white");
+  const [level, setLevel] = useState<Level>("medium");
 
   const lastIndex = history.states.length - 1;
   const current = history.states[lastIndex];
   const viewed = history.states[viewIndex];
   const isLive = viewIndex === lastIndex;
-  const canPlay = isLive && current.status === "playing" && pendingPromotion === null;
+  const botColor = mode === "bot" ? opposite(humanColor) : null;
+  const isBotTurn = current.status === "playing" && current.turn === botColor;
+  const canPlay = isLive && !isBotTurn && current.status === "playing" && pendingPromotion === null;
 
   const legalTargets = useMemo(
     () => (selected === null ? [] : legalMovesFrom(current, selected)),
@@ -73,6 +81,8 @@ export default function Game() {
     setPendingPromotion(null);
   };
 
+  useBot(isBotTurn ? current : null, level, play);
+
   const handleSquareClick = (square: number) => {
     if (!canPlay) return;
 
@@ -95,6 +105,18 @@ export default function Game() {
     setViewIndex(0);
     setSelected(null);
     setPendingPromotion(null);
+  };
+
+  const changeMode = (newMode: Mode) => {
+    setMode(newMode);
+    setFlipped(newMode === "bot" && humanColor === "black");
+    restart();
+  };
+
+  const changeColor = (color: Color) => {
+    setHumanColor(color);
+    setFlipped(color === "black");
+    restart();
   };
 
   const pickPromotion = (type: PromotionType) => {
@@ -126,8 +148,16 @@ export default function Game() {
       </Board>
 
       <div className={styles.side_box}>
-        <StatusPanel state={viewed} isLive={isLive} />
+        <StatusPanel state={viewed} isLive={isLive} botColor={botColor} />
         <MatchInfo viewIndex={viewIndex} lastIndex={lastIndex} onNavigate={navigate} onRestart={restart} />
+        <Settings
+          mode={mode}
+          humanColor={humanColor}
+          level={level}
+          onModeChange={changeMode}
+          onColorChange={changeColor}
+          onLevelChange={setLevel}
+        />
         <MoveList records={history.records} viewIndex={viewIndex} onSelect={navigate} />
         <button className={styles.button} onClick={() => setFlipped(!flipped)}>
           Flip board
@@ -135,7 +165,10 @@ export default function Game() {
         <details className={styles.rules}>
           <summary>Rules</summary>
           <ul>
-            <li>Each player makes two moves per turn.</li>
+            <li>
+              {mode === "bot" ? "You play against the bot. " : "Two players share this board. "}
+              Each player makes two moves per turn.
+            </li>
             <li>A move that gives check ends the turn at once, even if it was the first move.</li>
             <li>The checked player gets a single move, and it must escape the check.</li>
             <li>Checkmate ends the game. Stalemate is a draw.</li>

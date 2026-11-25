@@ -1,9 +1,13 @@
-# Double-Move Chess Engine
+# Double-Move Chess
 
-Play double-move chess (every player makes **two moves per turn**) against a bot.
-The game is based on [double-move chess](../double-move), the bot on the ideas of
+A chess variant where every player makes **two moves per turn**. Pick a mode in the side panel:
+
+- **vs Bot**: play against a bot as White or Black, on Easy, Medium or Hard.
+- **Two players**: two people share one board.
+
+The game is based on [react-ts-chess](https://github.com/ArtyomSukiasyan/react-ts-chess), the bot on the ideas of
 [Chess-engine](https://github.com/ArtyomSukiasyan/Chess-engine): minimax with alpha-beta
-pruning, the same piece values and piece-square tables.
+pruning, the same piece values and piece-square tables. Changing the mode starts a new game.
 
 ## Rules
 
